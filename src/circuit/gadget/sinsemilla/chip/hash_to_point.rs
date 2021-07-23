@@ -35,34 +35,25 @@ impl SinsemillaChip {
         let x_q = *Q.coordinates().unwrap().x();
         let y_q = *Q.coordinates().unwrap().y();
 
-        // Initialize the accumulator to `Q`.
-        let (mut x_a, mut y_a): (X<pallas::Base>, Y<pallas::Base>) = {
-            // Constrain the initial x_q to equal the x-coordinate of the domain's `Q`.
+        // Constrain the initial x_a, lambda_1, lambda_2, x_p using the q_sinsemilla4
+        // selector.
+        let mut y_a: Y<pallas::Base> = {
+            // Enable `q_sinsemilla4` on the first row.
+            config.q_sinsemilla4.enable(region, offset)?;
+            region.assign_fixed(|| "fixed y_q", config.fixed_y_q, offset, || Ok(y_q))?;
+
+            (Some(y_q)).into()
+        };
+
+        // Constrain the initial x_q to equal the x-coordinate of the domain's `Q`.
+        let mut x_a: X<pallas::Base> = {
             let x_a = {
                 let cell =
                     region.assign_advice_from_constant(|| "fixed x_q", config.x_a, offset, x_q)?;
                 CellValue::new(cell, Some(x_q))
             };
 
-            // Constrain the initial x_a, lambda_1, lambda_2, x_p using the fixed y_q
-            // initializer. Assign `fixed_y_q` to be zero on every other row.
-            {
-                region.assign_fixed(|| "fixed y_q", config.fixed_y_q, offset, || Ok(y_q))?;
-
-                let total_num_words = message.iter().map(|piece| piece.num_words()).sum();
-                for row in 1..total_num_words {
-                    region.assign_fixed(
-                        || "fixed y_q",
-                        config.fixed_y_q,
-                        offset + row,
-                        || Ok(pallas::Base::zero()),
-                    )?;
-                }
-            }
-
-            let y_a = Some(y_q);
-
-            (x_a.into(), y_a.into())
+            x_a.into()
         };
 
         let mut zs_sum: Vec<Vec<CellValue<pallas::Base>>> = Vec::new();
@@ -196,36 +187,17 @@ impl SinsemillaChip {
                 config.q_sinsemilla1.enable(region, offset + row)?;
             }
 
-            // Set `q_sinsemilla2` fixed column to 1 on every row but the last.
+            // Enable `q_sinsemilla2` selector on every row but the last.
             for row in 0..(piece.num_words() - 1) {
-                region.assign_fixed(
-                    || "q_s2 = 1",
-                    config.q_sinsemilla2,
-                    offset + row,
-                    || Ok(pallas::Base::one()),
-                )?;
+                config.q_sinsemilla2.enable(region, offset + row)?;
             }
 
-            // Set `q_sinsemilla2` fixed column to 0 on the last row if this is
-            // not the final piece, or to 2 on the last row of the final piece.
-            region.assign_fixed(
-                || {
-                    if final_piece {
-                        "q_s2 for final piece"
-                    } else {
-                        "q_s2 between pieces"
-                    }
-                },
-                config.q_sinsemilla2,
-                offset + piece.num_words() - 1,
-                || {
-                    Ok(if final_piece {
-                        pallas::Base::from_u64(2)
-                    } else {
-                        pallas::Base::zero()
-                    })
-                },
-            )?;
+            // Enable `q_sinsemilla3` selector on the last row of the final piece.
+            if final_piece {
+                config
+                    .q_sinsemilla3
+                    .enable(region, offset + piece.num_words() - 1)?;
+            }
         }
 
         // Message piece as K * piece.length bitstring
