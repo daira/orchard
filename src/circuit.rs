@@ -814,9 +814,10 @@ impl Proof {
 
     /// Verifies this proof with the given instances.
     pub fn verify(&self, vk: &VerifyingKey, instances: &[Instance]) -> Result<(), plonk::Error> {
-        let instances: Vec<_> = instances
+        let instances: Vec<_> = instances.iter().map(|i| i.to_halo2_instance()).collect();
+        let instances: Vec<Vec<_>> = instances
             .iter()
-            .map(|i| i.to_halo2_instance_commitments(vk))
+            .map(|i| i.iter().map(|c| &c[..]).collect())
             .collect();
         let instances: Vec<_> = instances.iter().map(|i| &i[..]).collect();
 
