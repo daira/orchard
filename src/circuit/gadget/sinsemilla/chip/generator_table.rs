@@ -37,10 +37,6 @@ impl GeneratorTableConfig {
             let q_s1 = meta.query_selector(config.q_sinsemilla1);
             let q_s2 = meta.query_selector(config.q_sinsemilla2);
 
-            let table_idx_cur = meta.query_fixed(table_idx, Rotation::cur());
-            let table_x_cur = meta.query_fixed(table_x, Rotation::cur());
-            let table_y_cur = meta.query_fixed(table_y, Rotation::cur());
-
             // m_{i+1} = z_{i} - 2^K * q_s2 * z_{i + 1}
             // Note that the message words m_i's are 1-indexed while the
             // running sum z_i's are 0-indexed.
@@ -79,7 +75,7 @@ impl GeneratorTableConfig {
             let x_p = q_s1.clone() * x_p + not_q_s1.clone() * init_x;
             let y_p = q_s1 * y_p + not_q_s1 * init_y;
 
-            vec![(m, table_idx_cur), (x_p, table_x_cur), (y_p, table_y_cur)]
+            vec![(m, table_idx), (x_p, table_x), (y_p, table_y)]
         });
     }
 

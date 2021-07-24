@@ -149,7 +149,7 @@ pub mod tests {
     use ff::PrimeFieldBits;
     use halo2::{
         arithmetic::FieldExt,
-        circuit::{Layouter, SimpleFloorPlanner},
+        circuit::{floor_planner, Layouter},
         dev::MockProver,
         pasta::pallas,
         plonk::{Circuit, ConstraintSystem, Error},
@@ -167,7 +167,8 @@ pub mod tests {
 
     impl Circuit<pallas::Base> for MyCircuit {
         type Config = (MerkleConfig, MerkleConfig);
-        type FloorPlanner = SimpleFloorPlanner;
+        // type FloorPlanner = SimpleFloorPlanner;
+        type FloorPlanner = floor_planner::V1;
 
         fn without_witnesses(&self) -> Self {
             Self::default()
@@ -343,7 +344,7 @@ pub mod tests {
         let circuit = MyCircuit::default();
         halo2::dev::CircuitLayout::default()
             .show_labels(false)
-            .render(&circuit, &root)
+            .render(11, &circuit, &root)
             .unwrap();
     }
 }

@@ -123,9 +123,9 @@ impl SinsemillaChip {
         }
 
         let config = SinsemillaConfig {
-            q_sinsemilla1: meta.selector(),
-            q_sinsemilla2: meta.selector(),
-            q_sinsemilla3: meta.selector(),
+            q_sinsemilla1: meta.complex_selector(),
+            q_sinsemilla2: meta.complex_selector(),
+            q_sinsemilla3: meta.complex_selector(),
             q_sinsemilla4: meta.selector(),
             fixed_y_q,
             x_a: advices[0],
