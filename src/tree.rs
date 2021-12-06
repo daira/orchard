@@ -28,9 +28,9 @@ lazy_static! {
         iter::empty()
             .chain(Some(MerkleHashOrchard::empty_leaf()))
             .chain(
-                (0..MERKLE_DEPTH_ORCHARD).scan(MerkleHashOrchard::empty_leaf(), |state, l| {
-                    let l = l as u8;
-                    *state = MerkleHashOrchard::combine(l.into(), state, state);
+                (0..MERKLE_DEPTH_ORCHARD).scan(MerkleHashOrchard::empty_leaf(), |state, altitude| {
+                    let altitude = altitude as u8;
+                    *state = MerkleHashOrchard::combine(altitude.into(), state, state);
                     Some(*state)
                 }),
             )
@@ -118,20 +118,20 @@ impl MerklePath {
     /// The layer with 2^n nodes is called "layer n":
     ///      - leaves are at layer MERKLE_DEPTH_ORCHARD = 32;
     ///      - the root is at layer 0.
-    /// `l` is MERKLE_DEPTH_ORCHARD - layer - 1.
+    /// `altitude` is MERKLE_DEPTH_ORCHARD - layer - 1.
     ///      - when hashing two leaves, we produce a node on the layer above the leaves, i.e.
-    ///        layer = 31, l = 0
-    ///      - when hashing to the final root, we produce the anchor with layer = 0, l = 31.
+    ///        layer = 31, altitude = 0
+    ///      - when hashing to the final root, we produce the anchor with layer = 0, altitude = 31.
     pub fn root(&self, cmx: ExtractedNoteCommitment) -> Anchor {
         self.auth_path
             .iter()
             .enumerate()
-            .fold(MerkleHashOrchard::from_cmx(&cmx), |node, (l, sibling)| {
-                let l = l as u8;
-                if self.position & (1 << l) == 0 {
-                    MerkleHashOrchard::combine(l.into(), &node, sibling)
+            .fold(MerkleHashOrchard::from_cmx(&cmx), |node, (altitude, sibling)| {
+                let altitude = altitude as u8;
+                if self.position & (1 << altitude) == 0 {
+                    MerkleHashOrchard::combine(altitude.into(), &node, sibling)
                 } else {
-                    MerkleHashOrchard::combine(l.into(), sibling, &node)
+                    MerkleHashOrchard::combine(altitude.into(), sibling, &node)
                 }
             })
             .into()
